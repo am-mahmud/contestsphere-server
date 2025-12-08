@@ -32,7 +32,6 @@ router.post('/register', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    // Return response (without password)
     res.status(201).json({
       token,
       user: {
@@ -49,7 +48,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login Route
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
