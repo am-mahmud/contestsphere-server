@@ -16,6 +16,7 @@ app.use(express.json());
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/contests', require('./routes/contest'));
 app.use('/api/users', require('./routes/user'));
+app.use('/api/participations', require('./routes/participation'));
 
 // Test route
 app.get('/', (req, res) => {
