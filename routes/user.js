@@ -44,14 +44,13 @@ router.put('/me', auth, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
   
     if (name) user.name = name;
     if (photo) user.photo = photo;
 
     await user.save();
 
-    // Return user without password
+  
     const updatedUser = await User.findById(req.user.userId).select('-password');
 
     res.json({
@@ -64,7 +63,6 @@ router.put('/me', auth, async (req, res) => {
   }
 });
 
-// GET all users (Admin only)
 router.get('/', auth, admin, async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
@@ -91,12 +89,11 @@ router.get('/', auth, admin, async (req, res) => {
   }
 });
 
-// PUT update user role (Admin only)
+
 router.put('/:id/role', auth, admin, async (req, res) => {
   try {
     const { role } = req.body;
 
-    // Validate role
     if (!['user', 'creator', 'admin'].includes(role)) {
       return res.status(400).json({ message: 'Invalid role' });
     }
