@@ -4,7 +4,21 @@ const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const User = require('../models/User');
 
-// GET current user profile (Protected)
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const users = await User.find()
+      .select('-password')
+      .sort({ winCount: -1, participationCount: -1 })
+      .limit(50); 
+
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select('-password');
@@ -20,7 +34,7 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-// PUT update current user profile (Protected)
+
 router.put('/me', auth, async (req, res) => {
   try {
     const { name, photo } = req.body;
@@ -31,7 +45,7 @@ router.put('/me', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update fields
+  
     if (name) user.name = name;
     if (photo) user.photo = photo;
 
