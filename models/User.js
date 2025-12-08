@@ -15,7 +15,8 @@ const userSchema = new mongoose.Schema({
     required: true
   },
   photo: {
-    type: String
+    type: String,
+    default: 'https://i.ibb.co.com/nsD8dcGf/user.png'
   },
   role: {
     type: String,
@@ -31,7 +32,7 @@ const userSchema = new mongoose.Schema({
     default: 0
   }
 }, {
-  timestamps: true  // ← This is the correct place for timestamps
+  timestamps: true 
 });
 
 module.exports = mongoose.model('User', userSchema);
