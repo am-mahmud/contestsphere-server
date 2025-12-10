@@ -8,6 +8,10 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password, photo } = req.body;
 
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
@@ -20,12 +24,12 @@ router.post('/register', async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      photo,
+      photo: photo || '',
     });
 
     await user.save();
 
-    
+
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -51,6 +55,10 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
 
     const user = await User.findOne({ email });
     if (!user) {
