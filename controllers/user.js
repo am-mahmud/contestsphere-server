@@ -2,7 +2,6 @@ const User = require('../models/User');
 const Contest = require('../models/Contest');
 const Participation = require('../models/Participation');
 
-// Get user profile
 const getUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -19,7 +18,6 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-// Update user profile
 const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -41,13 +39,11 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-// Join contest
 const joinContest = async (req, res) => {
   try {
     const userId = req.user.id;
     const { contestId } = req.body;
 
-    // Check if contest exists and is confirmed
     const contest = await Contest.findById(contestId);
 
     if (!contest) {
@@ -58,14 +54,12 @@ const joinContest = async (req, res) => {
       return res.status(400).json({ message: 'Can only join confirmed contests' });
     }
 
-    // Check if already joined
     const existing = await Participation.findOne({ userId, contestId });
 
     if (existing) {
       return res.status(400).json({ message: 'Already joined this contest' });
     }
 
-    // Create participation record
     const participation = new Participation({
       userId,
       contestId,
@@ -74,13 +68,12 @@ const joinContest = async (req, res) => {
 
     await participation.save();
 
-    // Update contest participant count
     await Contest.findByIdAndUpdate(
       contestId,
       { $inc: { participantCount: 1 } }
     );
 
-    // Update user participation count
+
     await User.findByIdAndUpdate(
       userId,
       { $inc: { participationCount: 1 } }
@@ -92,7 +85,6 @@ const joinContest = async (req, res) => {
   }
 };
 
-// Get participated contests
 const getParticipatedContests = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -109,7 +101,6 @@ const getParticipatedContests = async (req, res) => {
   }
 };
 
-// Get won contests
 const getWonContests = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -124,27 +115,23 @@ const getWonContests = async (req, res) => {
   }
 };
 
-// Submit task
 const submitTask = async (req, res) => {
   try {
     const userId = req.user.id;
     const { contestId, submittedTask } = req.body;
 
-    // Check if user has participated
     const participation = await Participation.findOne({ userId, contestId });
 
     if (!participation) {
       return res.status(404).json({ message: 'Not participated in this contest' });
     }
 
-    // Check deadline
     const contest = await Contest.findById(contestId);
 
     if (new Date() > new Date(contest.deadline)) {
       return res.status(400).json({ message: 'Deadline has passed' });
     }
 
-    // Update participation with submission
     const updated = await Participation.findByIdAndUpdate(
       participation._id,
       { submittedTask, submittedAt: new Date() },

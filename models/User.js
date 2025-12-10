@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
   },
   photo: {
     type: String,
-    default: 'https://i.ibb.co.com/nsD8dcGf/user.png'
+    // default: 'https://i.ibb.co.com/nsD8dcGf/user.png'
   },
   role: {
     type: String,
