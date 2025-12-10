@@ -15,11 +15,13 @@ const contestSchema = new mongoose.Schema({
   },
   price: {
     type: Number,
-    required: true
+    required: true,
+     min: 0
   },
   prizeMoney: {
     type: Number,
-    required: true
+    required: true,
+     min: 0
   },
   taskInstruction: {
     type: String,
@@ -40,7 +42,7 @@ const contestSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'rejected'],
+    enum: ['pending', 'confirmed', 'rejected','completed'],
     default: 'pending'
   },
   participantCount: {
