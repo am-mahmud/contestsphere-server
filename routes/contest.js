@@ -207,7 +207,6 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
-// PUT approve contest (Admin only)
 router.put('/:id/approve', auth, admin, async (req, res) => {
     try {
         const contest = await Contest.findById(req.params.id);
@@ -233,7 +232,7 @@ router.put('/:id/approve', auth, admin, async (req, res) => {
     }
 });
 
-// PUT reject contest (Admin only)
+
 router.put('/:id/reject', auth, admin, async (req, res) => {
     try {
         const { reason } = req.body;
