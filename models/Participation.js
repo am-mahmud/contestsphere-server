@@ -13,13 +13,15 @@ const participationSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
+    enum: ['pending', 'completed', 'failed'],
     default: 'completed'
   },
   submittedTask: {
     type: String
   },
   submittedAt: {
-    type: Date
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
