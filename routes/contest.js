@@ -78,7 +78,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// POST create new contest (Creator/Admin only)
+
 router.post('/', auth, creator, async (req, res) => {
     try {
         const {
@@ -117,7 +117,7 @@ router.post('/', auth, creator, async (req, res) => {
     }
 });
 
-// GET creator's own contests
+
 router.get('/creator/my-contests', auth, creator, async (req, res) => {
     try {
         const contests = await Contest.find({ creatorId: req.user.userId })
@@ -131,7 +131,7 @@ router.get('/creator/my-contests', auth, creator, async (req, res) => {
     }
 });
 
-// PUT update contest (Creator only, before approval)
+
 router.put('/:id', auth, creator, async (req, res) => {
     try {
         const contest = await Contest.findById(req.params.id);
@@ -139,18 +139,13 @@ router.put('/:id', auth, creator, async (req, res) => {
         if (!contest) {
             return res.status(404).json({ message: 'Contest not found' });
         }
-
-        // Check ownership
         if (contest.creatorId.toString() !== req.user.userId) {
             return res.status(403).json({ message: 'You can only edit your own contests' });
         }
-
-        // Check if still pending
         if (contest.status !== 'pending') {
             return res.status(400).json({ message: 'Cannot edit contest after approval/rejection' });
         }
 
-        // Update fields
         const {
             name,
             image,
@@ -183,7 +178,7 @@ router.put('/:id', auth, creator, async (req, res) => {
     }
 });
 
-// DELETE contest (Creator: only pending | Admin: any)
+
 router.delete('/:id', auth, async (req, res) => {
     try {
         const contest = await Contest.findById(req.params.id);
@@ -192,7 +187,6 @@ router.delete('/:id', auth, async (req, res) => {
             return res.status(404).json({ message: 'Contest not found' });
         }
 
-        // Check authorization
         const isCreator = contest.creatorId.toString() === req.user.userId;
         const isAdmin = req.user.role === 'admin';
 
@@ -200,12 +194,10 @@ router.delete('/:id', auth, async (req, res) => {
             return res.status(403).json({ message: 'Not authorized to delete this contest' });
         }
 
-        // Creators can only delete pending contests
         if (isCreator && !isAdmin && contest.status !== 'pending') {
             return res.status(400).json({ message: 'Cannot delete contest after approval' });
         }
 
-        // Admin can delete any contest
         await Contest.findByIdAndDelete(req.params.id);
 
         res.json({ message: 'Contest deleted successfully' });
