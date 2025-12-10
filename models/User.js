@@ -8,7 +8,8 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    lowercase: true,
   },
   password: {
     type: String,
@@ -16,7 +17,7 @@ const userSchema = new mongoose.Schema({
   },
   photo: {
     type: String,
-    // default: 'https://i.ibb.co.com/nsD8dcGf/user.png'
+    default: ''
   },
   role: {
     type: String,
@@ -30,7 +31,11 @@ const userSchema = new mongoose.Schema({
   participationCount: {
     type: Number,
     default: 0
-  }
+  },
+  bio: {
+    type: String,
+    default: ''
+  },
 }, {
   timestamps: true 
 });
