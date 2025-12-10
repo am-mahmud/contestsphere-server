@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
+const creator = require('../middleware/creator');
 const Contest = require('../models/Contest');
 
 router.get('/', async (req, res) => {
@@ -12,6 +13,7 @@ router.get('/', async (req, res) => {
 
         if (search) {
             query.$or = [
+                { contestType: { $regex: search, $options: 'i' } },
                 { name: { $regex: search, $options: 'i' } },
                 { description: { $regex: search, $options: 'i' } }
             ];
@@ -20,20 +22,19 @@ router.get('/', async (req, res) => {
         if (contestType) {
             query.contestType = contestType;
         }
-
         if (status) {
             query.status = status;
         } else {
-            query.status = 'confirmed'; 
+            query.status = 'confirmed';
         }
 
         let sortOption = {};
         if (sort === 'popular') {
-            sortOption = { participantCount: -1 }; 
+            sortOption = { participantCount: -1 };
         } else if (sort === 'deadline') {
-            sortOption = { deadline: 1 }; 
+            sortOption = { deadline: 1 };
         } else {
-            sortOption = { createdAt: -1 }; 
+            sortOption = { createdAt: -1 };
         }
 
         const skip = (page - 1) * limit;
@@ -60,19 +61,6 @@ router.get('/', async (req, res) => {
 });
 
 
-router.get('/my-contests', auth, async (req, res) => {
-    try {
-        const contests = await Contest.find({ creatorId: req.user.userId })
-            .sort({ createdAt: -1 })
-            .populate('winnerId', 'name photo');
-
-        res.json(contests);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
 router.get('/:id', async (req, res) => {
     try {
         const contest = await Contest.findById(req.params.id)
@@ -90,8 +78,8 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-
-router.post('/', auth, async (req, res) => {
+// POST create new contest (Creator/Admin only)
+router.post('/', auth, creator, async (req, res) => {
     try {
         const {
             name,
@@ -104,10 +92,6 @@ router.post('/', auth, async (req, res) => {
             deadline
         } = req.body;
 
-        if (req.user.role !== 'creator' && req.user.role !== 'admin') {
-            return res.status(403).json({ message: 'Only creators can create contests' });
-        }
-
         const contest = new Contest({
             name,
             image,
@@ -118,7 +102,7 @@ router.post('/', auth, async (req, res) => {
             contestType,
             deadline,
             creatorId: req.user.userId,
-            status: 'pending' 
+            status: 'pending'
         });
 
         await contest.save();
@@ -133,8 +117,22 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
+// GET creator's own contests
+router.get('/creator/my-contests', auth, creator, async (req, res) => {
+    try {
+        const contests = await Contest.find({ creatorId: req.user.userId })
+            .sort({ createdAt: -1 })
+            .populate('winnerId', 'name photo');
 
-router.put('/:id', auth, async (req, res) => {
+        res.json(contests);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// PUT update contest (Creator only, before approval)
+router.put('/:id', auth, creator, async (req, res) => {
     try {
         const contest = await Contest.findById(req.params.id);
 
@@ -142,12 +140,12 @@ router.put('/:id', auth, async (req, res) => {
             return res.status(404).json({ message: 'Contest not found' });
         }
 
-       
+        // Check ownership
         if (contest.creatorId.toString() !== req.user.userId) {
             return res.status(403).json({ message: 'You can only edit your own contests' });
         }
 
-        // Check if contest is still pending (can't edit after approval)
+        // Check if still pending
         if (contest.status !== 'pending') {
             return res.status(400).json({ message: 'Cannot edit contest after approval/rejection' });
         }
@@ -185,7 +183,7 @@ router.put('/:id', auth, async (req, res) => {
     }
 });
 
-// DELETE contest (Protected - Own contest only, before approval)
+// DELETE contest (Creator: only pending | Admin: any)
 router.delete('/:id', auth, async (req, res) => {
     try {
         const contest = await Contest.findById(req.params.id);
@@ -194,16 +192,20 @@ router.delete('/:id', auth, async (req, res) => {
             return res.status(404).json({ message: 'Contest not found' });
         }
 
-        // Check if user is the creator or admin
-        if (contest.creatorId.toString() !== req.user.userId && req.user.role !== 'admin') {
+        // Check authorization
+        const isCreator = contest.creatorId.toString() === req.user.userId;
+        const isAdmin = req.user.role === 'admin';
+
+        if (!isCreator && !isAdmin) {
             return res.status(403).json({ message: 'Not authorized to delete this contest' });
         }
 
-        // Check if contest is still pending (can't delete after approval)
-        if (contest.status !== 'pending' && req.user.role !== 'admin') {
+        // Creators can only delete pending contests
+        if (isCreator && !isAdmin && contest.status !== 'pending') {
             return res.status(400).json({ message: 'Cannot delete contest after approval' });
         }
 
+        // Admin can delete any contest
         await Contest.findByIdAndDelete(req.params.id);
 
         res.json({ message: 'Contest deleted successfully' });
@@ -243,7 +245,7 @@ router.put('/:id/approve', auth, admin, async (req, res) => {
 router.put('/:id/reject', auth, admin, async (req, res) => {
     try {
         const { reason } = req.body;
-        
+
         const contest = await Contest.findById(req.params.id);
 
         if (!contest) {
@@ -261,34 +263,6 @@ router.put('/:id/reject', auth, admin, async (req, res) => {
             message: 'Contest rejected successfully',
             contest,
             reason: reason || 'No reason provided'
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
-// PUT update contest status (Admin only) - KEEP FOR BACKWARD COMPATIBILITY
-router.put('/:id/status', auth, admin, async (req, res) => {
-    try {
-        const { status } = req.body;
-
-        if (!['pending', 'confirmed', 'rejected'].includes(status)) {
-            return res.status(400).json({ message: 'Invalid status' });
-        }
-
-        const contest = await Contest.findById(req.params.id);
-
-        if (!contest) {
-            return res.status(404).json({ message: 'Contest not found' });
-        }
-
-        contest.status = status;
-        await contest.save();
-
-        res.json({
-            message: `Contest ${status} successfully`,
-            contest
         });
     } catch (err) {
         console.error(err);
