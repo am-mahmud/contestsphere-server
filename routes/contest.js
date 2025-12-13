@@ -61,6 +61,21 @@ router.get('/', async (req, res) => {
 });
 
 
+router.get('/creator/my', auth, creator, async (req, res) => {
+    try {
+        const contests = await Contest.find({ creatorId: req.user.userId })
+            .sort({ createdAt: -1 })
+            .populate('winnerId', 'name photo');
+
+        res.json(contests);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+
 router.get('/:id', async (req, res) => {
     try {
         const contest = await Contest.findById(req.params.id)
@@ -117,19 +132,6 @@ router.post('/', auth, creator, async (req, res) => {
     }
 });
 
-
-router.get('/creator/my-contests', auth, creator, async (req, res) => {
-    try {
-        const contests = await Contest.find({ creatorId: req.user.userId })
-            .sort({ createdAt: -1 })
-            .populate('winnerId', 'name photo');
-
-        res.json(contests);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
 
 
 router.put('/:id', auth, creator, async (req, res) => {
