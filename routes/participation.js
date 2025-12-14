@@ -15,7 +15,7 @@ router.post('/join', auth, async (req, res) => {
     const contest = await Contest.findById(contestId);
     if (!contest) {
       return res.status(404).json({ message: 'Contest not found' });
-    }
+    } 
 
     if (contest.status !== 'confirmed') {
       return res.status(400).json({ message: 'Can only join confirmed contests' });
