@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const creator = require('../middleware/creator');
 const Contest = require('../models/Contest');
+const User = require('../models/User');
 
 router.get('/', async (req, res) => {
     try {
@@ -60,7 +61,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-
 router.get('/creator/my-contests', auth, creator, async (req, res) => {
     try {
         const contests = await Contest.find({ creatorId: req.user.userId })
@@ -74,26 +74,23 @@ router.get('/creator/my-contests', auth, creator, async (req, res) => {
     }
 });
 
-
-
 router.get('/winners/all', async (req, res) => {
     try {
         const { limit = 20 } = req.query;
-        const User = require('../models/User');
 
         let contests = await Contest.find({ winnerId: { $ne: null } })
             .populate('creatorId', 'name photo')
             .sort({ updatedAt: -1 })
             .limit(parseInt(limit));
 
-        const contestsWithWinners = await Promise.all(contests.map(async (contest) => {
-            const contestObj = contest.toObject();
-            if (contest.winnerId) {
+        const contestsWithWinners = await Promise.all(
+            contests.map(async (contest) => {
+                const contestObj = contest.toObject();
                 const winner = await User.findById(contest.winnerId).select('name photo');
                 contestObj.winnerId = winner;
-            }
-            return contestObj;
-        }));
+                return contestObj;
+            })
+        );
 
         res.json({ contests: contestsWithWinners });
     } catch (err) {
@@ -118,7 +115,6 @@ router.get('/:id', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
-
 
 router.post('/', auth, creator, async (req, res) => {
     try {
@@ -157,8 +153,6 @@ router.post('/', auth, creator, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
-
-
 
 router.put('/:id', auth, creator, async (req, res) => {
     try {
@@ -205,7 +199,6 @@ router.put('/:id', auth, creator, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
-
 
 router.delete('/:id', auth, async (req, res) => {
     try {
@@ -260,7 +253,6 @@ router.put('/:id/approve', auth, admin, async (req, res) => {
     }
 });
 
-
 router.put('/:id/reject', auth, admin, async (req, res) => {
     try {
         const { reason } = req.body;
@@ -289,9 +281,4 @@ router.put('/:id/reject', auth, admin, async (req, res) => {
     }
 });
 
-
-
 module.exports = router;
-
-
-
