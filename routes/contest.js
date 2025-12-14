@@ -76,6 +76,32 @@ router.get('/creator/my-contests', auth, creator, async (req, res) => {
 
 
 
+router.get('/winners/all', async (req, res) => {
+    try {
+        const { limit = 20 } = req.query;
+        const User = require('../models/User');
+
+        let contests = await Contest.find({ winnerId: { $ne: null } })
+            .populate('creatorId', 'name photo')
+            .sort({ updatedAt: -1 })
+            .limit(parseInt(limit));
+
+        const contestsWithWinners = await Promise.all(contests.map(async (contest) => {
+            const contestObj = contest.toObject();
+            if (contest.winnerId) {
+                const winner = await User.findById(contest.winnerId).select('name photo');
+                contestObj.winnerId = winner;
+            }
+            return contestObj;
+        }));
+
+        res.json({ contests: contestsWithWinners });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 router.get('/:id', async (req, res) => {
     try {
         const contest = await Contest.findById(req.params.id)
@@ -262,6 +288,8 @@ router.put('/:id/reject', auth, admin, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+
 
 module.exports = router;
 
