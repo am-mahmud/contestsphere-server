@@ -61,7 +61,7 @@ router.get('/', async (req, res) => {
 });
 
 
-router.get('/creator/my', auth, creator, async (req, res) => {
+router.get('/creator/my-contests', auth, creator, async (req, res) => {
     try {
         const contests = await Contest.find({ creatorId: req.user.userId })
             .sort({ createdAt: -1 })
